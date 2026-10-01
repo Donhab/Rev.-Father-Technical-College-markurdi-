@@ -29,11 +29,11 @@ git push -u origin main`;
 
   const vercelBuildInstructions = `# Framework Preset: Vite
 # Root Directory: ./
+# Install Command: npm install --legacy-peer-deps
 # Build Command: npm run build
 # Output Directory: dist
 
-# Environment Variables (in Vercel Project Settings):
-# The app will automatically connect to your Firestore database seamlessly!`;
+# Note: vercel.json and .npmrc are already pre-configured in the project root!`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
