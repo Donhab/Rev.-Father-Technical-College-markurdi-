@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128;
+    }
+
+    match /admins/{adminId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(adminId);
+    }
+
+    match /students/{studentId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(studentId);
+    }
+
+    match /staff/{staffId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(staffId);
+    }
+
+    match /classes/{classId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(classId);
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(subjectId);
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(assignmentId);
+    }
+
+    match /scratch_cards/{cardId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(cardId);
+    }
+
+    match /results/{resultId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(resultId);
+    }
+
+    match /notices/{noticeId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(noticeId);
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(settingId);
+    }
+
+    match /school_news/{newsId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(newsId);
+    }
+
+    match /school_news_media/{mediaId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(mediaId);
+    }
+
+    match /website_customization/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(docId);
+    }
+
+    match /hero_slides/{slideId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(slideId);
+    }
+
+    match /system_auth/{authId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(authId);
+    }
+
+    match /system_meta/{metaId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(metaId);
+    }
+
+    match /test/{docId} {
+      allow read: if true;
+    }
+  }
+}

@@ -1,0 +1,259 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 620" width="600" height="620">
+  <defs>
+    <!-- Upper semicircle clip for sky, sun, rays, and open book -->
+    <clipPath id="upperSkyClip">
+      <path d="M 136,246 A 164,164 0 1,1 464,246 Z" />
+    </clipPath>
+
+    <!-- Lower inner circle clip for green agricultural fields and blue T-river -->
+    <clipPath id="innerEmblemClip">
+      <circle cx="300" cy="274" r="183" />
+    </clipPath>
+
+    <!-- Left green quadrant clip -->
+    <clipPath id="leftGreenClip">
+      <rect x="114" y="292" width="161" height="168" />
+    </clipPath>
+
+    <!-- Right green quadrant clip -->
+    <clipPath id="rightGreenClip">
+      <rect x="325" y="292" width="161" height="168" />
+    </clipPath>
+
+    <!-- Single black 3-blade crop sprout tuft -->
+    <g id="sprout">
+      <path d="M 0,7.5 L -8.5,-5 L -2.3,-1 L 0,-9 L 2.3,-1 L 8.5,-5 Z" fill="#000000" />
+    </g>
+
+    <!-- Staggered rows of sprouts for agricultural quadrants -->
+    <g id="sproutGrid">
+      <!-- Row 1 (y = 310) -->
+      <use href="#sprout" x="130" y="310" />
+      <use href="#sprout" x="153" y="308" />
+      <use href="#sprout" x="176" y="311" />
+      <use href="#sprout" x="199" y="308" />
+      <use href="#sprout" x="222" y="311" />
+      <use href="#sprout" x="245" y="308" />
+      <use href="#sprout" x="263" y="311" />
+      <!-- Row 2 (y = 332) -->
+      <use href="#sprout" x="125" y="332" />
+      <use href="#sprout" x="145" y="330" />
+      <use href="#sprout" x="167" y="333" />
+      <use href="#sprout" x="190" y="330" />
+      <use href="#sprout" x="213" y="333" />
+      <use href="#sprout" x="236" y="330" />
+      <use href="#sprout" x="259" y="333" />
+      <!-- Row 3 (y = 354) -->
+      <use href="#sprout" x="135" y="354" />
+      <use href="#sprout" x="157" y="352" />
+      <use href="#sprout" x="179" y="355" />
+      <use href="#sprout" x="201" y="352" />
+      <use href="#sprout" x="224" y="355" />
+      <use href="#sprout" x="247" y="352" />
+      <use href="#sprout" x="264" y="355" />
+      <!-- Row 4 (y = 376) -->
+      <use href="#sprout" x="149" y="376" />
+      <use href="#sprout" x="171" y="374" />
+      <use href="#sprout" x="193" y="377" />
+      <use href="#sprout" x="215" y="374" />
+      <use href="#sprout" x="238" y="377" />
+      <use href="#sprout" x="260" y="374" />
+      <!-- Row 5 (y = 398) -->
+      <use href="#sprout" x="167" y="398" />
+      <use href="#sprout" x="189" y="396" />
+      <use href="#sprout" x="211" y="399" />
+      <use href="#sprout" x="233" y="396" />
+      <use href="#sprout" x="256" y="399" />
+      <!-- Row 6 (y = 420) -->
+      <use href="#sprout" x="193" y="420" />
+      <use href="#sprout" x="215" y="418" />
+      <use href="#sprout" x="237" y="421" />
+      <use href="#sprout" x="259" y="418" />
+      <!-- Row 7 (y = 441) -->
+      <use href="#sprout" x="225" y="441" />
+      <use href="#sprout" x="247" y="439" />
+      <use href="#sprout" x="263" y="441" />
+    </g>
+
+    <!-- Curved path for school name centered inside the red lower band (r = 243.5) -->
+    <path id="collegeNameArc" d="M 58.35,244 A 243.5,243.5 0 1,0 541.65,244" />
+  </defs>
+
+  <!-- Pure White Background -->
+  <rect width="600" height="620" rx="36" fill="#ffffff" />
+
+  <!-- 1. UPPER OUTER BLACK & RED ARCH -->
+  <circle cx="300" cy="274" r="250" fill="#000000" />
+  <circle cx="300" cy="274" r="234" fill="#e31b23" />
+
+  <!-- 2. WHITE COGWHEEL / GEAR ARCH & 7 TEETH -->
+  <g fill="#ffffff">
+    <!-- Main white inner arch band -->
+    <path d="M 112,254 A 188,188 0 1,1 488,254 L 488,274 L 112,274 Z" />
+    <!-- Left and right horizontal white step-extensions right above the red banner shoulders -->
+    <rect x="66" y="206" width="68" height="24" />
+    <rect x="466" y="206" width="68" height="24" />
+    <!-- 7 Radial Gear Teeth (-66 deg to +66 deg from top vertical) -->
+    <g transform="translate(300,274)">
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(-66)" />
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(-44)" />
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(-22)" />
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(0)" />
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(22)" />
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(44)" />
+      <rect x="-15" y="-216" width="30" height="34" transform="rotate(66)" />
+    </g>
+  </g>
+
+  <!-- 3. UPPER SEMICIRCLE SKY, WHITE RAYS, RED SUN & OPEN BOOK -->
+  <g clip-path="url(#upperSkyClip)">
+    <!-- Solid Black Sky -->
+    <rect x="120" y="90" width="360" height="170" fill="#000000" />
+
+    <!-- White Light Cone / Beams behind Sun (leaving black sky arch at top) -->
+    <path d="M 250,196 L 210,142 Q 300,114 390,142 L 350,196 Z" fill="#ffffff" />
+
+    <!-- Rising Red Sun with White & Black Halo Rings -->
+    <circle cx="300" cy="194" r="52" fill="#000000" />
+    <circle cx="300" cy="194" r="47" fill="#ffffff" />
+    <circle cx="300" cy="194" r="39" fill="#000000" />
+    <circle cx="300" cy="194" r="35" fill="#e31b23" />
+
+    <!-- Open White Book at Horizon -->
+    <g>
+      <!-- Outer black book base -->
+      <path d="M 222,244 L 233,204 Q 266,199 300,209 Q 334,199 367,204 L 378,244 Q 338,240 300,249 Q 262,240 222,244 Z" fill="#000000" />
+      <!-- Bottom page thickness white strip -->
+      <path d="M 225,242 Q 262,237 300,246 Q 338,237 375,242 L 373,236 Q 338,231 300,240 Q 262,231 227,236 Z" fill="#ffffff" />
+      <!-- Left white page -->
+      <path d="M 298.5,211 Q 266,202 236,207 L 229,235 Q 264,230 298.5,239 Z" fill="#ffffff" />
+      <!-- Right white page -->
+      <path d="M 301.5,211 Q 334,202 364,207 L 371,235 Q 336,230 301.5,239 Z" fill="#ffffff" />
+
+      <!-- Left page lines -->
+      <g stroke="#000000" stroke-width="1.8" fill="none">
+        <path d="M 240,212 Q 268,208 294,215" />
+        <path d="M 239,216.5 Q 267,212.5 294,219.5" />
+        <path d="M 237.5,221 Q 266,217 294,224" />
+        <path d="M 236,225.5 Q 265,221.5 294,228.5" />
+        <path d="M 234.5,230 Q 264,226 294,233" />
+      </g>
+
+      <!-- Right page lines -->
+      <g stroke="#000000" stroke-width="1.8" fill="none">
+        <path d="M 360,212 Q 332,208 306,215" />
+        <path d="M 361,216.5 Q 333,212.5 306,219.5" />
+        <path d="M 362.5,221 Q 334,217 306,224" />
+        <path d="M 364,225.5 Q 335,221.5 306,228.5" />
+        <path d="M 365.5,230 Q 336,226 306,233" />
+      </g>
+    </g>
+  </g>
+
+  <!-- 4. LOWER HALF INNER CIRCLE: WHITE BORDER, GREEN FIELDS & BLUE T-RIVER -->
+  <!-- White inner circle ring separating green fields from red banner -->
+  <path d="M 104,250 A 196,196 0 1,0 496,250" fill="none" stroke="#ffffff" stroke-width="12" />
+  <path d="M 115,250 A 185,185 0 1,0 485,250" fill="none" stroke="#000000" stroke-width="5" />
+
+  <g clip-path="url(#innerEmblemClip)">
+    <!-- Left Green Field -->
+    <rect x="114" y="288" width="161" height="175" fill="#00923f" />
+    <g clip-path="url(#leftGreenClip)">
+      <use href="#sproutGrid" />
+    </g>
+
+    <!-- Right Green Field (mirrored sprout grid) -->
+    <rect x="325" y="288" width="161" height="175" fill="#00923f" />
+    <g clip-path="url(#rightGreenClip)">
+      <use href="#sproutGrid" transform="translate(600,0) scale(-1,1)" />
+    </g>
+  </g>
+
+  <!-- Blue T-Shaped River (spanning full width of inner emblem & straight down center) -->
+  <path
+    d="M 100,242
+       Q 200,247 293,249
+       L 300,262
+       L 307,249
+       Q 400,247 500,242
+       L 495,296
+       Q 410,296 325,291
+       L 325,457
+       L 275,457
+       L 275,291
+       Q 190,296 105,296
+       Z"
+    fill="#0095d9"
+    stroke="#000000"
+    stroke-width="5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Re-stroke inner circle arc so green & blue edges are crisp -->
+  <path d="M 115,294 A 185,185 0 0,0 275,457" fill="none" stroke="#000000" stroke-width="5" />
+  <path d="M 325,457 A 185,185 0 0,0 485,294" fill="none" stroke="#000000" stroke-width="5" />
+
+  <!-- 5. STEPPED-OUT RED CURVED BANNER & WHITE TEXT -->
+  <!-- Black outer border of stepped-out lower banner -->
+  <path
+    d="M 30,226
+       L 104,226
+       A 198,198 0 1,0 496,226
+       L 570,226
+       A 272,272 0 1,1 30,226 Z"
+    fill="#000000"
+  />
+  <!-- Red Banner Fill -->
+  <path
+    d="M 37,232
+       L 98,232
+       A 204,204 0 1,0 502,232
+       L 563,232
+       A 265,265 0 1,1 37,232 Z"
+    fill="#e31b23"
+  />
+
+  <!-- Curved White School Name Text -->
+  <text
+    fill="#ffffff"
+    font-family="'Arial Narrow', Impact, 'Roboto Condensed', Arial, Helvetica, sans-serif"
+    font-weight="900"
+    font-size="25"
+    letter-spacing="0.4"
+  >
+    <textPath
+      href="#collegeNameArc"
+      startOffset="50%"
+      text-anchor="middle"
+      textLength="794"
+      lengthAdjust="spacingAndGlyphs"
+    >
+      REV. FR. MOSES ORSHIO ADASU UNIVERSITY SCIENCE AND TECHNICAL COLLEGE, MAKURDI
+    </textPath>
+  </text>
+
+  <!-- 6. BOTTOM BLACK MOTTO SCROLL / RIBBON -->
+  <!-- Left swallowtail ribbon wing -->
+  <polygon points="40,518 112,535 100,582 50,570 66,545" fill="#000000" />
+  <!-- Right swallowtail ribbon wing -->
+  <polygon points="560,518 488,535 500,582 550,570 534,545" fill="#000000" />
+  <!-- White diagonal ribbon fold lines -->
+  <line x1="110" y1="533" x2="96" y2="588" stroke="#ffffff" stroke-width="4" />
+  <line x1="490" y1="533" x2="504" y2="588" stroke="#ffffff" stroke-width="4" />
+  <!-- Main center black motto bar -->
+  <rect x="96" y="542" width="408" height="48" fill="#000000" />
+  <!-- Motto text -->
+  <text
+    x="300"
+    y="575"
+    text-anchor="middle"
+    fill="#ffffff"
+    font-family="Arial, Helvetica, sans-serif"
+    font-weight="700"
+    font-size="26.5"
+    textLength="376"
+    lengthAdjust="spacingAndGlyphs"
+  >
+    Scientia Liberatio Populorum
+  </text>
+</svg>

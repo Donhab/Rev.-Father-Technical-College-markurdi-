@@ -1,0 +1,8 @@
+{
+  "name": "Rev. Fr. Moses Orshio Adasu  University science and technical college, Makurdi",
+  "description": "Official School Management System with real-time multi-device Firestore synchronization for Rev. Fr. Moses Orshio Adasu University Science and Technical College, Makurdi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
