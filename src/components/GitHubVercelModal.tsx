@@ -87,7 +87,7 @@ git push -u origin main`;
                 <span className="w-5 h-5 rounded-full bg-emerald-800 text-white flex items-center justify-center font-bold text-[10px]">
                   2
                 </span>
-                <strong className="text-stone-900 text-xs">Deploy on Vercel (vercel.com)</strong>
+                <strong className="text-stone-900 text-xs">Deploy on Vercel (vercel.com/new)</strong>
               </div>
               <button
                 onClick={() => copyText(vercelBuildInstructions, 'vercel')}
@@ -98,9 +98,9 @@ git push -u origin main`;
               </button>
             </div>
             <p className="text-stone-600 leading-relaxed text-[11px]">
-              1. Head to <a href="https://vercel.com/new" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-semibold">vercel.com/new</a> and connect your GitHub repository.<br />
-              2. Framework preset will automatically be detected as <strong>Vite</strong>.<br />
-              3. The Firestore client configuration is bundled within the applet so all live real-time sync works right out of the box on Vercel!
+              1. First, make sure you click <strong>Save / Sync to GitHub</strong> in AI Studio so your GitHub repository has the latest <code>package.json</code>, <code>.npmrc</code>, and <code>vercel.json</code>.<br />
+              2. On <a href="https://vercel.com/new" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-semibold">vercel.com/new</a>, open <strong>Build and Output Settings</strong>, toggle <strong>Install Command</strong> Override ON, and set it to: <code>npm install --legacy-peer-deps</code>.<br />
+              3. Click <strong>Deploy</strong> — the Firestore client configuration is bundled so real-time sync works out of the box!
             </p>
           </div>
 
