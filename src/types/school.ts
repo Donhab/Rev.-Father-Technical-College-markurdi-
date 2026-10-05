@@ -29,6 +29,7 @@ export interface Student {
   enrolledByTeacherId?: string;
   activatedScratchCardPin?: string;
   hasActivatedScratchCard?: boolean;
+  enrolledSubjectIds?: string[]; // IDs of subjects offered/enrolled by this student
   createdAt: number;
   updatedAt: number;
 }

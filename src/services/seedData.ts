@@ -199,14 +199,14 @@ export const DEFAULT_SUBJECTS: Subject[] = [
     id: 'sub-phy',
     code: 'PHY102',
     name: 'Engineering Physics',
-    category: 'Science',
+    category: 'Core',
     classesOffered: ['CCS 1', 'Tech 1 Electrical', 'Tech 1 Auto & Agro-Mech']
   },
   {
     id: 'sub-chm',
     code: 'CHM103',
     name: 'Industrial & Applied Chemistry',
-    category: 'Science',
+    category: 'Core',
     classesOffered: ['Tech 2 Building & Woodwork', 'Garment 1']
   }
 ];
@@ -316,6 +316,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     status: 'Active',
     hasActivatedScratchCard: true,
     activatedScratchCardPin: '8392-4910-5821',
+    enrolledSubjectIds: ['sub-comp', 'sub-ect', 'sub-math', 'sub-eng', 'sub-td'],
     createdAt: Date.now() - 5000000,
     updatedAt: Date.now()
   },
@@ -334,6 +335,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     guardianPhone: '+234 803 765 4321',
     status: 'Active',
     hasActivatedScratchCard: false,
+    enrolledSubjectIds: ['sub-garment', 'sub-math', 'sub-eng', 'sub-chm'],
     createdAt: Date.now() - 4000000,
     updatedAt: Date.now()
   },
@@ -352,6 +354,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     guardianPhone: '+234 806 334 1920',
     status: 'Active',
     hasActivatedScratchCard: false,
+    enrolledSubjectIds: ['sub-eim', 'sub-rac', 'sub-ect', 'sub-math', 'sub-eng', 'sub-td'],
     createdAt: Date.now() - 3500000,
     updatedAt: Date.now()
   },
@@ -370,6 +373,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     guardianPhone: '+234 805 219 4480',
     status: 'Active',
     hasActivatedScratchCard: false,
+    enrolledSubjectIds: ['sub-amt', 'sub-agm', 'sub-wft', 'sub-math', 'sub-eng', 'sub-td'],
     createdAt: Date.now() - 3000000,
     updatedAt: Date.now()
   },
@@ -388,6 +392,7 @@ export const DEFAULT_STUDENTS: Student[] = [
     guardianPhone: '+234 803 901 6732',
     status: 'Active',
     hasActivatedScratchCard: false,
+    enrolledSubjectIds: ['sub-bct', 'sub-wwt', 'sub-math', 'sub-eng', 'sub-td', 'sub-chm'],
     createdAt: Date.now() - 2500000,
     updatedAt: Date.now()
   }
@@ -533,9 +538,12 @@ export const DEFAULT_CUSTOMIZATION: WebsiteCustomization = {
 export const DEFAULT_NOTICE: Notice = {
   id: 'current-advisory',
   title: 'MOAUM USTC Makurdi — NBTE/NABTEB Practical Workshop & CA Advisory',
-  message: 'All Trade Heads and Form Masters across the Walmayo-Kanshio / Gboko Road Campus, Makurdi are reminded to upload 1st, 2nd, and 3rd Continuous Assessment (CA) scores and NABTEB practical workshop evaluations before the terminal portal lock.',
-  author: 'Very Rev. Fr. Dr. Terngu Orshio (Principal)',
-  updatedAt: Date.now()
+  content: 'All Trade Heads and Form Masters across the Walmayo-Kanshio / Gboko Road Campus, Makurdi are reminded to upload 1st, 2nd, and 3rd Continuous Assessment (CA) scores and NABTEB practical workshop evaluations before the terminal portal lock.',
+  type: 'Advisory',
+  session: '2025/2026',
+  term: 'First Term',
+  active: true,
+  actionText: 'Enter Marks'
 };
 
 export const DEFAULT_NEWS: SchoolNews[] = [

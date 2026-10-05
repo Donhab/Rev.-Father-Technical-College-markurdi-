@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { SchoolClass, Subject, TeachingAssignment, Staff } from '../types/school';
+import { SchoolClass, Subject, TeachingAssignment, Staff, Student } from '../types/school';
+import { isStudentInClass } from '../utils/studentUtils';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { GraduationCap, Plus, BookOpen, Layers, UserCheck, Edit2, Trash2 } from 'lucide-react';
+import { GraduationCap, Plus, BookOpen, Layers, UserCheck, Edit2, Trash2, Users, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ClassesAndSubjectsTabProps {
@@ -10,6 +11,7 @@ interface ClassesAndSubjectsTabProps {
   subjects: Subject[];
   staff: Staff[];
   assignments: TeachingAssignment[];
+  students?: Student[];
   onAddClass: (c: Omit<SchoolClass, 'id'>) => Promise<void>;
   onUpdateClass?: (id: string, updates: Partial<SchoolClass>) => Promise<void>;
   onDeleteClass?: (id: string) => Promise<void>;
@@ -26,6 +28,7 @@ export const ClassesAndSubjectsTab: React.FC<ClassesAndSubjectsTabProps> = ({
   subjects,
   staff,
   assignments,
+  students = [],
   onAddClass,
   onUpdateClass,
   onDeleteClass,
@@ -38,6 +41,7 @@ export const ClassesAndSubjectsTab: React.FC<ClassesAndSubjectsTabProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<SchoolClass | null>(null);
   const [classToDelete, setClassToDelete] = useState<SchoolClass | null>(null);
+  const [viewingClassStudents, setViewingClassStudents] = useState<SchoolClass | null>(null);
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
@@ -175,45 +179,139 @@ export const ClassesAndSubjectsTab: React.FC<ClassesAndSubjectsTabProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {classes.map((cls) => (
-            <div key={cls.id} className="bg-white p-5 rounded-xl border border-stone-200 shadow-2xs hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#0b4d2c] flex items-center justify-center font-bold">
-                    <GraduationCap className="w-5 h-5" />
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-stone-100 text-stone-600 rounded">
-                      {cls.arm}
+          {classes.map((cls) => {
+            const clsStudents = students.filter((s) => isStudentInClass(s, cls));
+            return (
+              <div key={cls.id} className="bg-white p-5 rounded-xl border border-stone-200 shadow-2xs hover:shadow-md transition flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="w-9 h-9 rounded-lg bg-emerald-50 text-[#0b4d2c] flex items-center justify-center font-bold">
+                      <GraduationCap className="w-5 h-5" />
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => openEditClassModal(cls)}
-                      className="p-1 text-stone-400 hover:text-[#0b4d2c] transition cursor-pointer"
-                      title="Edit class"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    {onDeleteClass && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-stone-100 text-stone-600 rounded">
+                        {cls.arm}
+                      </span>
                       <button
                         type="button"
-                        onClick={() => setClassToDelete(cls)}
-                        className="p-1 text-stone-400 hover:text-red-600 transition cursor-pointer"
-                        title="Delete class"
+                        onClick={() => openEditClassModal(cls)}
+                        className="p-1 text-stone-400 hover:text-[#0b4d2c] transition cursor-pointer"
+                        title="Edit class"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                    )}
+                      {onDeleteClass && (
+                        <button
+                          type="button"
+                          onClick={() => setClassToDelete(cls)}
+                          className="p-1 text-stone-400 hover:text-red-600 transition cursor-pointer"
+                          title="Delete class"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  <h3 className="text-base font-bold text-stone-900">{cls.name}</h3>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Form Teacher: <strong className="text-stone-700">{cls.formTeacherName || 'Unassigned'}</strong>
+                  </p>
                 </div>
-                <h3 className="text-base font-bold text-stone-900">{cls.name}</h3>
-                <p className="text-xs text-stone-500 mt-1">
-                  Form Teacher: <strong className="text-stone-700">{cls.formTeacherName || 'Unassigned'}</strong>
-                </p>
+
+                <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-stone-600 flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>{clsStudents.length} {clsStudents.length === 1 ? 'Student' : 'Students'}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setViewingClassStudents(cls)}
+                    className="text-xs font-bold text-[#0b4d2c] hover:underline cursor-pointer"
+                  >
+                    View Roster →
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Modal: View Class Student Roster */}
+        {viewingClassStudents && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+                <div>
+                  <h3 className="font-bold text-base text-stone-900">
+                    {viewingClassStudents.name} — Student Roster
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    Department: {viewingClassStudents.arm} • Form Teacher: {viewingClassStudents.formTeacherName || 'Unassigned'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setViewingClassStudents(null)}
+                  className="p-1 text-stone-400 hover:text-stone-600 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mt-4 max-h-80 overflow-y-auto">
+                {(() => {
+                  const roster = students.filter((s) => isStudentInClass(s, viewingClassStudents));
+                  if (roster.length === 0) {
+                    return (
+                      <p className="py-8 text-center text-xs text-stone-400">
+                        No students registered in {viewingClassStudents.name} yet.
+                      </p>
+                    );
+                  }
+                  return (
+                    <table className="w-full text-left text-xs text-stone-600">
+                      <thead className="bg-stone-50 text-stone-700 uppercase text-[10px] font-semibold sticky top-0">
+                        <tr>
+                          <th className="py-2 px-3">Adm No</th>
+                          <th className="py-2 px-3">Student Name</th>
+                          <th className="py-2 px-3">Gender</th>
+                          <th className="py-2 px-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {roster.map((s) => (
+                          <tr key={s.id} className="hover:bg-emerald-50/30">
+                            <td className="py-2 px-3 font-mono font-bold text-[#0b4d2c]">
+                              {s.admissionNo}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-stone-900">
+                              {s.firstName} {s.lastName}
+                            </td>
+                            <td className="py-2 px-3 text-stone-500">{s.gender}</td>
+                            <td className="py-2 px-3">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                {s.status || 'Active'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-stone-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setViewingClassStudents(null)}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-lg"
+                >
+                  Close
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
         {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">

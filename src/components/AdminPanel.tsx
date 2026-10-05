@@ -8,6 +8,7 @@ import {
   SchoolSettings,
   SchoolNews
 } from '../types/school';
+import { isStudentInClass } from '../utils/studentUtils';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { PostSchoolNewsForm } from './PostSchoolNewsForm';
 import { SchoolBadge, SchoolBadgeUploaderCard } from './SchoolBadge';
@@ -19,6 +20,7 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Search,
   Plus,
   Layers,
   Settings,
@@ -150,6 +152,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [stdGuardianPhone, setStdGuardianPhone] = useState('');
   const [stdPassword, setStdPassword] = useState('0000');
   const [submittingStudent, setSubmittingStudent] = useState(false);
+  const [studentClassFilter, setStudentClassFilter] = useState<string>('All');
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [viewingClassRoster, setViewingClassRoster] = useState<SchoolClass | null>(null);
+
+  useEffect(() => {
+    if (!stdClassId && classes.length > 0) {
+      setStdClassId(classes[0].id);
+    }
+  }, [classes, stdClassId]);
 
   // Login credentials visibility & copy state
   const [visiblePasswords, setVisiblePasswords] = useState<{ [id: string]: boolean }>({});
@@ -433,7 +444,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setStdFirstName('');
     setStdLastName('');
     setStdGender('Male');
-    setStdClassId(classes[0]?.id || '');
+    const activeClassId =
+      studentClassFilter !== 'All'
+        ? classes.find((c) => c.id === studentClassFilter || c.name === studentClassFilter)?.id || classes[0]?.id || ''
+        : classes[0]?.id || '';
+    setStdClassId(activeClassId);
     setStdGuardianName('');
     setStdGuardianPhone('');
     setStdPassword('0000');
@@ -775,63 +790,159 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {classes.map((cls) => (
+            {classes.map((cls) => {
+              const clsStudents = students.filter((s) => isStudentInClass(s, cls));
+              return (
               <div
                 key={cls.id}
-                className="bg-white p-5 rounded-xl border border-stone-200 shadow-2xs space-y-2"
+                className="bg-white p-5 rounded-xl border border-stone-200 shadow-2xs space-y-2 flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between">
-                  <span className="w-8 h-8 rounded-lg bg-emerald-50 text-[#0b4d2c] flex items-center justify-center font-bold">
-                    <GraduationCap className="w-4 h-4" />
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-stone-100 rounded text-stone-600">
-                      Arm: {cls.arm}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="w-8 h-8 rounded-lg bg-emerald-50 text-[#0b4d2c] flex items-center justify-center font-bold">
+                      <GraduationCap className="w-4 h-4" />
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => openEditClassModal(cls)}
-                      className="text-stone-400 hover:text-[#0b4d2c] p-1 transition cursor-pointer"
-                      title="Edit class"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    {onDeleteClass && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-stone-100 rounded text-stone-600">
+                        Arm: {cls.arm}
+                      </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          setPendingDelete({
-                            title: 'Remove Class',
-                            message: `Are you sure you want to permanently remove class "${cls.name}" (${cls.arm})?`,
-                            confirmLabel: 'Yes, Remove Class',
-                            onConfirm: async () => {
-                              await onDeleteClass(cls.id);
-                              setPendingDelete(null);
-                            }
-                          })
-                        }
-                        className="text-stone-400 hover:text-red-600 p-1 transition cursor-pointer"
-                        title="Delete class"
+                        onClick={() => openEditClassModal(cls)}
+                        className="text-stone-400 hover:text-[#0b4d2c] p-1 transition cursor-pointer"
+                        title="Edit class"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                    )}
+                      {onDeleteClass && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPendingDelete({
+                              title: 'Remove Class',
+                              message: `Are you sure you want to permanently remove class "${cls.name}" (${cls.arm})?`,
+                              confirmLabel: 'Yes, Remove Class',
+                              onConfirm: async () => {
+                                await onDeleteClass(cls.id);
+                                setPendingDelete(null);
+                              }
+                            })
+                          }
+                          className="text-stone-400 hover:text-red-600 p-1 transition cursor-pointer"
+                          title="Delete class"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <h4 className="text-base font-bold text-stone-900 mt-2">{cls.name}</h4>
+                  <p className="text-xs text-stone-500">
+                    Form Teacher:{' '}
+                    <strong className="text-stone-800">{cls.formTeacherName || 'Unassigned'}</strong>
+                  </p>
+                  <div className="text-[11px] text-stone-400 pt-1 border-t border-stone-100">
+                    Assigned Subjects:{' '}
+                    <span className="text-stone-700 font-semibold">
+                      {cls.assignedSubjectIds?.length || subjects.length} subjects
+                    </span>
                   </div>
                 </div>
-                <h4 className="text-base font-bold text-stone-900">{cls.name}</h4>
-                <p className="text-xs text-stone-500">
-                  Form Teacher:{' '}
-                  <strong className="text-stone-800">{cls.formTeacherName || 'Unassigned'}</strong>
-                </p>
-                <div className="text-[11px] text-stone-400 pt-1 border-t border-stone-100">
-                  Assigned Subjects:{' '}
-                  <span className="text-stone-700 font-semibold">
-                    {cls.assignedSubjectIds?.length || subjects.length} subjects
+
+                <div className="pt-2 border-t border-stone-100 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-stone-700 flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>{clsStudents.length} {clsStudents.length === 1 ? 'Student' : 'Students'}</span>
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setViewingClassRoster(cls)}
+                    className="text-xs font-bold text-[#0b4d2c] hover:underline cursor-pointer"
+                  >
+                    View Roster →
+                  </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Modal: View Class Roster */}
+          {viewingClassRoster && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+              <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200">
+                <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+                  <div>
+                    <h3 className="font-bold text-base text-stone-900">
+                      {viewingClassRoster.name} — Student Roster
+                    </h3>
+                    <p className="text-xs text-stone-500">
+                      Department: {viewingClassRoster.arm} • Form Teacher: {viewingClassRoster.formTeacherName || 'Unassigned'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setViewingClassRoster(null)}
+                    className="p-1 text-stone-400 hover:text-stone-600 rounded-lg cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="mt-4 max-h-80 overflow-y-auto">
+                  {(() => {
+                    const roster = students.filter((s) => isStudentInClass(s, viewingClassRoster));
+                    if (roster.length === 0) {
+                      return (
+                        <p className="py-8 text-center text-xs text-stone-400">
+                          No students registered in {viewingClassRoster.name} yet. Click &quot;Add Student&quot; to enroll learners.
+                        </p>
+                      );
+                    }
+                    return (
+                      <table className="w-full text-left text-xs text-stone-600">
+                        <thead className="bg-stone-50 text-stone-700 uppercase text-[10px] font-semibold sticky top-0">
+                          <tr>
+                            <th className="py-2 px-3">Adm No</th>
+                            <th className="py-2 px-3">Student Name</th>
+                            <th className="py-2 px-3">Gender</th>
+                            <th className="py-2 px-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {roster.map((s) => (
+                            <tr key={s.id} className="hover:bg-emerald-50/30">
+                              <td className="py-2 px-3 font-mono font-bold text-[#0b4d2c]">
+                                {s.admissionNo}
+                              </td>
+                              <td className="py-2 px-3 font-medium text-stone-900">
+                                {s.firstName} {s.lastName}
+                              </td>
+                              <td className="py-2 px-3 text-stone-500">{s.gender}</td>
+                              <td className="py-2 px-3">
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                  {s.status || 'Active'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    );
+                  })()}
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-stone-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setViewingClassRoster(null)}
+                    className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-lg cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -937,6 +1048,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
 
+          {/* Filter and Search Bar for Students */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="relative sm:col-span-2">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={studentSearchTerm}
+                onChange={(e) => setStudentSearchTerm(e.target.value)}
+                placeholder="Search students by name or admission number..."
+                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
+              />
+            </div>
+            <div>
+              <select
+                value={studentClassFilter}
+                onChange={(e) => setStudentClassFilter(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
+              >
+                <option value="All">All Classes ({students.length} students)</option>
+                {classes.map((cls) => {
+                  const count = students.filter((s) => isStudentInClass(s, cls)).length;
+                  return (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name} ({cls.arm}) — {count} {count === 1 ? 'student' : 'students'}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-stone-600">
@@ -952,11 +1094,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {students.map((std) => {
-                    const stdPass = std.password || '0000';
-                    const isPassVisible = showAllStudentPasswords || visiblePasswords[std.id];
-                    return (
-                    <tr key={std.id} className="hover:bg-emerald-50/40 transition">
+                  {(() => {
+                    const filtered = students.filter((s) => {
+                      const matchesSearch =
+                        s.firstName.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                        s.lastName.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                        s.admissionNo.toLowerCase().includes(studentSearchTerm.toLowerCase());
+                      const matchesClass =
+                        studentClassFilter === 'All' || isStudentInClass(s, studentClassFilter);
+                      return matchesSearch && matchesClass;
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-stone-400">
+                            No students found matching your criteria.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filtered.map((std) => {
+                      const stdPass = std.password || '0000';
+                      const isPassVisible = showAllStudentPasswords || visiblePasswords[std.id];
+                      return (
+                      <tr key={std.id} className="hover:bg-emerald-50/40 transition">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-bold text-[#0b4d2c]">{std.admissionNo}</span>
@@ -1046,7 +1209,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </td>
                     </tr>
                     );
-                  })}
+                  });
+                })()}
                 </tbody>
               </table>
             </div>

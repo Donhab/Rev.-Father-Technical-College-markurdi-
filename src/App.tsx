@@ -97,8 +97,11 @@ function SchoolAppContent() {
     updateNotice,
     enrollStudent,
     updateStudent,
+    toggleStudentSubjectEnrollment,
+    enrollAllClassStudentsInSubject,
     deenrollStudent,
     saveStudentScore,
+    saveBatchScores,
     activateScratchCardForStudent
   } = useSchoolData();
 
@@ -263,6 +266,9 @@ function SchoolAppContent() {
             onEnrollStudent={enrollStudent}
             onUpdateStudent={updateStudent}
             onDeenrollStudent={deenrollStudent}
+            onToggleStudentSubjectEnrollment={toggleStudentSubjectEnrollment}
+            onEnrollAllClassStudentsInSubject={enrollAllClassStudentsInSubject}
+            onSaveBatchScores={saveBatchScores}
             onSaveScore={saveStudentScore}
           />
         )}
@@ -347,6 +353,7 @@ function SchoolAppContent() {
             classes={classes}
             subjects={subjects}
             staff={staff}
+            students={students}
             assignments={assignments}
             onAddClass={addClass}
             onUpdateClass={updateClass}
@@ -367,6 +374,7 @@ function SchoolAppContent() {
             classes={classes}
             subjects={subjects}
             staff={staff}
+            students={students}
             assignments={assignments}
             onAddClass={addClass}
             onUpdateClass={updateClass}

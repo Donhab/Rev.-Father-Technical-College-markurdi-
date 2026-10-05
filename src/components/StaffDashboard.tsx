@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Student,
   Staff,
@@ -8,6 +8,7 @@ import {
   ExamResult,
   SubjectScore
 } from '../types/school';
+import { isStudentInClass, isStudentOfferingSubject } from '../utils/studentUtils';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { SchoolBadge } from './SchoolBadge';
 import {
@@ -26,7 +27,10 @@ import {
   EyeOff,
   Copy,
   Check,
-  Key
+  Key,
+  CheckSquare,
+  Square,
+  Users
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -41,6 +45,25 @@ interface StaffDashboardProps {
   onEnrollStudent: (data: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Student>;
   onUpdateStudent?: (studentId: string, updates: Partial<Student>) => Promise<void>;
   onDeenrollStudent: (studentId: string) => Promise<void>;
+  onToggleStudentSubjectEnrollment?: (
+    studentId: string,
+    subjectId: string,
+    shouldEnroll: boolean
+  ) => Promise<void>;
+  onEnrollAllClassStudentsInSubject?: (classId: string, subjectId: string) => Promise<void>;
+  onSaveBatchScores?: (
+    scores: Array<{
+      studentId: string;
+      subjectId: string;
+      subjectName: string;
+      ca1: number;
+      ca2: number;
+      ca3: number;
+      exam: number;
+      teacherId: string;
+      teacherName: string;
+    }>
+  ) => Promise<void>;
   onSaveScore: (
     studentId: string,
     subjectId: string,
@@ -65,6 +88,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   onEnrollStudent,
   onUpdateStudent,
   onDeenrollStudent,
+  onToggleStudentSubjectEnrollment,
+  onEnrollAllClassStudentsInSubject,
+  onSaveBatchScores,
   onSaveScore
 }) => {
   // Use either the logged in teacher or default to first staff
@@ -103,6 +129,19 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   );
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId) || subjects[0];
 
+  // Ensure default selections stay synced if classes/subjects list loads asynchronously
+  useEffect(() => {
+    if ((!selectedClassId || !classes.some((c) => c.id === selectedClassId)) && availableClasses.length > 0) {
+      setSelectedClassId(formTeacherClasses[0]?.id || availableClasses[0]?.id);
+    }
+  }, [classes, availableClasses, formTeacherClasses, selectedClassId]);
+
+  useEffect(() => {
+    if ((!selectedSubjectId || !subjects.some((s) => s.id === selectedSubjectId)) && subjects.length > 0) {
+      setSelectedSubjectId(teacherAssignments[0]?.subjectId || subjects[0]?.id);
+    }
+  }, [subjects, teacherAssignments, selectedSubjectId]);
+
   // Enrollment form state
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [studentToDeenroll, setStudentToDeenroll] = useState<Student | null>(null);
@@ -113,6 +152,11 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   const [guardianPhone, setGuardianPhone] = useState('');
   const [studentPassword, setStudentPassword] = useState('0000');
   const [enrolling, setEnrolling] = useState(false);
+  const [enrollingAll, setEnrollingAll] = useState(false);
+  const [savingAllScores, setSavingAllScores] = useState(false);
+
+  // Subject enrollment local override state { [studentId]: boolean }
+  const [subjectEnrollments, setSubjectEnrollments] = useState<{ [studentId: string]: boolean }>({});
 
   // Password visibility & copy state for Form Teacher viewing student credentials
   const [visiblePasswords, setVisiblePasswords] = useState<{ [id: string]: boolean }>({});
@@ -144,10 +188,68 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     };
   }>({});
 
-  // Filter students enrolled in the teacher's selected class
-  const enrolledStudents = students.filter(
-    (s) => s.classId === selectedClass?.id || s.className === selectedClass?.name
-  );
+  // Filter all students registered in this class (including any newly registered students)
+  const classStudents = students.filter((s) => isStudentInClass(s, selectedClass));
+
+  // Determine if a student is enrolled in the currently selected subject
+  const isStudentEnrolledInCurrentSubject = (std: Student): boolean => {
+    if (typeof subjectEnrollments[std.id] === 'boolean') {
+      return subjectEnrollments[std.id];
+    }
+    return isStudentOfferingSubject(std, selectedSubject?.id, results);
+  };
+
+  const enrolledInSubjectCount = classStudents.filter((s) =>
+    isStudentEnrolledInCurrentSubject(s)
+  ).length;
+  const allClassStudentsEnrolled =
+    classStudents.length > 0 && enrolledInSubjectCount === classStudents.length;
+
+  const handleToggleStudentEnrollment = async (std: Student) => {
+    if (!selectedSubject?.id) return;
+    const current = isStudentEnrolledInCurrentSubject(std);
+    const nextVal = !current;
+    setSubjectEnrollments((prev) => ({ ...prev, [std.id]: nextVal }));
+
+    try {
+      if (onToggleStudentSubjectEnrollment) {
+        await onToggleStudentSubjectEnrollment(std.id, selectedSubject.id, nextVal);
+      } else if (onUpdateStudent) {
+        const cur = Array.isArray(std.enrolledSubjectIds) ? std.enrolledSubjectIds : [];
+        const nextList = nextVal
+          ? Array.from(new Set([...cur, selectedSubject.id]))
+          : cur.filter((id) => id !== selectedSubject.id);
+        await onUpdateStudent(std.id, { enrolledSubjectIds: nextList });
+      }
+    } catch (err) {
+      console.error('Failed to toggle student subject enrollment:', err);
+    }
+  };
+
+  const handleEnrollAllStudentsAtOnce = async () => {
+    if (!selectedSubject?.id || !selectedClass || classStudents.length === 0) return;
+    setEnrollingAll(true);
+    try {
+      const updatedMap: { [id: string]: boolean } = {};
+      classStudents.forEach((s) => {
+        updatedMap[s.id] = true;
+      });
+      setSubjectEnrollments((prev) => ({ ...prev, ...updatedMap }));
+
+      if (onEnrollAllClassStudentsInSubject) {
+        await onEnrollAllClassStudentsInSubject(selectedClass.id, selectedSubject.id);
+      } else if (onToggleStudentSubjectEnrollment) {
+        for (const s of classStudents) {
+          await onToggleStudentSubjectEnrollment(s.id, selectedSubject.id, true);
+        }
+      }
+      confetti({ particleCount: 50, spread: 70 });
+    } catch (err) {
+      console.error('Failed to enroll all students in subject:', err);
+    } finally {
+      setEnrollingAll(false);
+    }
+  };
 
   // Initialize scores state from existing results
   const getExistingScore = (studentId: string) => {
@@ -225,6 +327,51 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     }
   };
 
+  const handleSaveAllScores = async () => {
+    const enrolledStudents = classStudents.filter((s) => isStudentEnrolledInCurrentSubject(s));
+    if (enrolledStudents.length === 0) return;
+    setSavingAllScores(true);
+    try {
+      if (onSaveBatchScores) {
+        const batchPayload = enrolledStudents.map((std) => {
+          const sc = getExistingScore(std.id);
+          return {
+            studentId: std.id,
+            subjectId: selectedSubject.id,
+            subjectName: selectedSubject.name,
+            ca1: sc.ca1,
+            ca2: sc.ca2,
+            ca3: sc.ca3,
+            exam: sc.exam,
+            teacherId: teacher?.id || 'staff-01',
+            teacherName: teacher?.fullName || 'Teacher'
+          };
+        });
+        await onSaveBatchScores(batchPayload);
+      } else {
+        for (const std of enrolledStudents) {
+          const sc = getExistingScore(std.id);
+          await onSaveScore(
+            std.id,
+            selectedSubject.id,
+            selectedSubject.name,
+            sc.ca1,
+            sc.ca2,
+            sc.ca3,
+            sc.exam,
+            teacher?.id || 'staff-01',
+            teacher?.fullName || 'Teacher'
+          );
+        }
+      }
+      confetti({ particleCount: 40 });
+    } catch (err) {
+      console.error('Error saving all scores:', err);
+    } finally {
+      setSavingAllScores(false);
+    }
+  };
+
   const handleEnrollSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnrolling(true);
@@ -232,7 +379,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
       const count = students.length + 1;
       const admissionNo = `USTC/2026/${count.toString().padStart(3, '0')}`;
 
-      await onEnrollStudent({
+      const newStudent = await onEnrollStudent({
         admissionNo,
         password: studentPassword.trim() || '0000',
         firstName,
@@ -245,8 +392,13 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         guardianName,
         guardianPhone,
         status: 'Active',
-        enrolledByTeacherId: teacher?.id
+        enrolledByTeacherId: teacher?.id,
+        enrolledSubjectIds: selectedSubject?.id ? [selectedSubject.id] : []
       });
+
+      if (newStudent?.id && selectedSubject?.id) {
+        setSubjectEnrollments((prev) => ({ ...prev, [newStudent.id]: true }));
+      }
 
       confetti({ particleCount: 40 });
       setFirstName('');
@@ -424,14 +576,14 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {(isFormTeacherOfCurrentClass ? enrolledStudents : myFormClassStudents).length === 0 ? (
+                {(isFormTeacherOfCurrentClass ? classStudents : myFormClassStudents).length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-6 text-center text-stone-400">
                       No students enrolled in your form class yet.
                     </td>
                   </tr>
                 ) : (
-                  (isFormTeacherOfCurrentClass ? enrolledStudents : myFormClassStudents).map((std) => {
+                  (isFormTeacherOfCurrentClass ? classStudents : myFormClassStudents).map((std) => {
                     const stdPass = std.password || '0000';
                     const isPassVisible = showAllPasswords || visiblePasswords[std.id];
                     return (
@@ -533,15 +685,80 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         </div>
       )}
 
+      {/* Subject Offering & Enrollment Control Card */}
+      <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-emerald-700 shrink-0" />
+            <h3 className="text-sm font-bold text-stone-900">
+              Subject Offering &amp; Student Enrollment: <span className="text-[#0b4d2c]">{selectedSubject?.name} ({selectedSubject?.code})</span>
+            </h3>
+          </div>
+          <p className="text-xs text-stone-600 mt-1">
+            All students registered in <strong>{selectedClass?.name}</strong> appear below with an enrollment box beside their name. Tick students who offer this subject to enroll them and enter scores, or click <strong>Enroll All Students at Once</strong>.
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-white text-emerald-900 border border-emerald-300">
+              {enrolledInSubjectCount} of {classStudents.length} Students Enrolled in {selectedSubject?.code}
+            </span>
+            {classStudents.length - enrolledInSubjectCount > 0 ? (
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                {classStudents.length - enrolledInSubjectCount} Not Offering / Pending
+              </span>
+            ) : classStudents.length > 0 ? (
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> All Class Students Enrolled
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto shrink-0">
+          <button
+            type="button"
+            onClick={handleEnrollAllStudentsAtOnce}
+            disabled={enrollingAll || classStudents.length === 0 || allClassStudentsEnrolled}
+            className={`px-3.5 py-2 text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 ${
+              allClassStudentsEnrolled && classStudents.length > 0
+                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default'
+                : 'bg-[#0b4d2c] hover:bg-[#083a21] text-white cursor-pointer active:scale-95'
+            }`}
+            title="Enroll all students in this class to offer this subject at once"
+          >
+            <CheckCircle className="w-4 h-4" />
+            <span>
+              {enrollingAll
+                ? 'Enrolling All...'
+                : allClassStudentsEnrolled && classStudents.length > 0
+                ? 'All Students Enrolled ✓'
+                : 'Enroll All Students at Once'}
+            </span>
+          </button>
+
+          {enrolledInSubjectCount > 0 && (
+            <button
+              type="button"
+              onClick={handleSaveAllScores}
+              disabled={savingAllScores}
+              className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-lg border border-stone-300 transition flex items-center gap-1.5 cursor-pointer"
+              title="Save marks for all enrolled students at once"
+            >
+              <Save className="w-3.5 h-3.5 text-stone-700" />
+              <span>{savingAllScores ? 'Saving All...' : 'Save All Entered Scores'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Enrolled Students & Marks Entry Table */}
       <div className="bg-white rounded-xl border border-stone-200 shadow-2xs overflow-hidden">
         <div className="p-4 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-stone-900">
-              {selectedClass?.name} Roster • {selectedSubject?.name} Marks
+              {selectedClass?.name} Class Roster • {selectedSubject?.name} Gradebook
             </h3>
             <p className="text-xs text-stone-500">
-              {enrolledStudents.length} students enrolled in this class
+              {classStudents.length} students registered in this class ({enrolledInSubjectCount} enrolled in {selectedSubject?.code})
             </p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -557,10 +774,10 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
             )}
             <button
               onClick={() => setShowEnrollModal(true)}
-              className="px-3 py-1 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-md border border-stone-300 flex items-center gap-1"
+              className="px-3 py-1 bg-[#0b4d2c] hover:bg-[#083a21] text-white text-xs font-semibold rounded-md shadow-xs flex items-center gap-1"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Enroll Another Student</span>
+              <span>Register New Student to {selectedClass?.name}</span>
             </button>
           </div>
         </div>
@@ -569,6 +786,21 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
           <table className="w-full text-left text-xs text-stone-600">
             <thead className="bg-stone-50 border-b border-stone-200 text-stone-700 font-semibold uppercase text-[11px]">
               <tr>
+                <th className="py-3 px-3 w-36">
+                  <div
+                    onClick={handleEnrollAllStudentsAtOnce}
+                    className="flex items-center gap-1.5 cursor-pointer hover:text-[#0b4d2c] transition select-none"
+                    title="Click to enroll all students in this class at once"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allClassStudentsEnrolled}
+                      onChange={handleEnrollAllStudentsAtOnce}
+                      className="w-4 h-4 text-[#0b4d2c] border-stone-300 rounded focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <span>Offers Subject</span>
+                  </div>
+                </th>
                 <th className="py-3 px-3">Login ID (Adm No)</th>
                 <th className="py-3 px-3">Student Name</th>
                 {isFormTeacherOfCurrentClass && (
@@ -584,14 +816,15 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {enrolledStudents.length === 0 ? (
+              {classStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={isFormTeacherOfCurrentClass ? 10 : 9} className="py-8 text-center text-stone-400">
-                    No students enrolled in {selectedClass?.name} yet. Click &quot;Enroll Student&quot; above to add learners.
+                  <td colSpan={isFormTeacherOfCurrentClass ? 11 : 10} className="py-8 text-center text-stone-400">
+                    No students registered in {selectedClass?.name} yet. Click &quot;Register New Student to {selectedClass?.name}&quot; above to add learners.
                   </td>
                 </tr>
               ) : (
-                enrolledStudents.map((std) => {
+                classStudents.map((std) => {
+                  const isEnrolled = isStudentEnrolledInCurrentSubject(std);
                   const score = getExistingScore(std.id);
                   const total = score.ca1 + score.ca2 + score.ca3 + score.exam;
                   const stdPass = std.password || '0000';
@@ -605,7 +838,35 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                   else if (total >= 40) grade = 'E';
 
                   return (
-                    <tr key={std.id} className="hover:bg-stone-50/70 transition">
+                    <tr
+                      key={std.id}
+                      className={`transition ${
+                        isEnrolled
+                          ? 'hover:bg-emerald-50/30'
+                          : 'bg-stone-50/40 opacity-80 hover:opacity-100 hover:bg-stone-100/50'
+                      }`}
+                    >
+                      {/* Checkbox box beside student to tick/enroll in this subject */}
+                      <td className="py-3 px-3">
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isEnrolled}
+                            onChange={() => handleToggleStudentEnrollment(std)}
+                            className="w-4 h-4 text-[#0b4d2c] border-stone-300 rounded focus:ring-emerald-500 cursor-pointer"
+                          />
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border transition ${
+                              isEnrolled
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : 'bg-stone-100 text-stone-500 border-stone-200'
+                            }`}
+                          >
+                            {isEnrolled ? 'Enrolled ✓' : 'Not Enrolled'}
+                          </span>
+                        </label>
+                      </td>
+
                       <td className="py-3 px-3 font-mono font-bold text-[#0b4d2c]">
                         {std.admissionNo}
                       </td>
@@ -643,98 +904,129 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                         </td>
                       )}
 
-                      {/* CA 1 (Max 10) */}
-                      <td className="py-3 px-2 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={score.ca1}
-                          onChange={(e) => handleScoreChange(std.id, 'ca1', e.target.value)}
-                          className="w-14 text-center px-1 py-1 font-mono font-semibold border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                        />
-                      </td>
+                      {/* If enrolled: editable score fields. If not enrolled: prompt to tick box to enroll */}
+                      {isEnrolled ? (
+                        <>
+                          {/* CA 1 (Max 10) */}
+                          <td className="py-3 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              value={score.ca1}
+                              onChange={(e) => handleScoreChange(std.id, 'ca1', e.target.value)}
+                              className="w-14 text-center px-1 py-1 font-mono font-semibold border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
+                            />
+                          </td>
 
-                      {/* CA 2 (Max 10) */}
-                      <td className="py-3 px-2 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={score.ca2}
-                          onChange={(e) => handleScoreChange(std.id, 'ca2', e.target.value)}
-                          className="w-14 text-center px-1 py-1 font-mono font-semibold border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                        />
-                      </td>
+                          {/* CA 2 (Max 10) */}
+                          <td className="py-3 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              value={score.ca2}
+                              onChange={(e) => handleScoreChange(std.id, 'ca2', e.target.value)}
+                              className="w-14 text-center px-1 py-1 font-mono font-semibold border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
+                            />
+                          </td>
 
-                      {/* CA 3 (Max 10) */}
-                      <td className="py-3 px-2 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={score.ca3}
-                          onChange={(e) => handleScoreChange(std.id, 'ca3', e.target.value)}
-                          className="w-14 text-center px-1 py-1 font-mono font-semibold border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                        />
-                      </td>
+                          {/* CA 3 (Max 10) */}
+                          <td className="py-3 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              value={score.ca3}
+                              onChange={(e) => handleScoreChange(std.id, 'ca3', e.target.value)}
+                              className="w-14 text-center px-1 py-1 font-mono font-semibold border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
+                            />
+                          </td>
 
-                      {/* Exam (Max 70) */}
-                      <td className="py-3 px-2 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="70"
-                          value={score.exam}
-                          onChange={(e) => handleScoreChange(std.id, 'exam', e.target.value)}
-                          className="w-16 text-center px-1 py-1 font-mono font-bold text-stone-900 border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none bg-stone-50"
-                        />
-                      </td>
+                          {/* Exam (Max 70) */}
+                          <td className="py-3 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="70"
+                              value={score.exam}
+                              onChange={(e) => handleScoreChange(std.id, 'exam', e.target.value)}
+                              className="w-16 text-center px-1 py-1 font-mono font-bold text-stone-900 border border-stone-300 rounded focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none bg-stone-50"
+                            />
+                          </td>
 
-                      {/* Total (Max 100) */}
-                      <td className="py-3 px-2 text-center font-bold text-sm text-[#0b4d2c]">
-                        {total}
-                      </td>
+                          {/* Total (Max 100) */}
+                          <td className="py-3 px-2 text-center font-bold text-sm text-[#0b4d2c]">
+                            {total}
+                          </td>
 
-                      {/* Grade */}
-                      <td className="py-3 px-2 text-center">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            grade === 'A'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : grade === 'B'
-                              ? 'bg-blue-100 text-blue-800'
-                              : grade === 'C'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {grade}
-                        </span>
-                      </td>
+                          {/* Grade */}
+                          <td className="py-3 px-2 text-center">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                grade === 'A'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : grade === 'B'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : grade === 'C'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {grade}
+                            </span>
+                          </td>
 
-                      {/* Actions: Save Score & De-enroll */}
-                      <td className="py-3 px-3 text-right space-x-2">
-                        <button
-                          onClick={() => handleSaveStudentScore(std)}
-                          disabled={score.saving}
-                          className={`px-2.5 py-1 text-xs font-semibold rounded-md shadow-2xs transition ${
-                            score.saved
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-[#0b4d2c] hover:bg-[#083a21] text-white'
-                          }`}
-                        >
-                          {score.saving ? 'Saving...' : score.saved ? 'Saved ✓' : 'Save Score'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setStudentToDeenroll(std)}
-                          className="px-2 py-1 text-stone-400 hover:text-red-600 rounded cursor-pointer"
-                          title="De-enroll student"
-                        >
-                          <UserMinus className="w-3.5 h-3.5 inline" />
-                        </button>
-                      </td>
+                          {/* Actions: Save Score & De-enroll */}
+                          <td className="py-3 px-3 text-right space-x-2">
+                            <button
+                              onClick={() => handleSaveStudentScore(std)}
+                              disabled={score.saving}
+                              className={`px-2.5 py-1 text-xs font-semibold rounded-md shadow-2xs transition ${
+                                score.saved
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-[#0b4d2c] hover:bg-[#083a21] text-white cursor-pointer'
+                              }`}
+                            >
+                              {score.saving ? 'Saving...' : score.saved ? 'Saved ✓' : 'Save Score'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStudentToDeenroll(std)}
+                              className="px-2 py-1 text-stone-400 hover:text-red-600 rounded cursor-pointer"
+                              title="De-enroll student from class"
+                            >
+                              <UserMinus className="w-3.5 h-3.5 inline" />
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td colSpan={6} className="py-3 px-3 text-stone-400 italic">
+                            <div className="flex items-center gap-2">
+                              <span>Not enrolled in {selectedSubject?.code} —</span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleStudentEnrollment(std)}
+                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#0b4d2c] font-semibold rounded border border-emerald-200 text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <CheckSquare className="w-3.5 h-3.5" />
+                                <span>Tick to Enroll in Subject</span>
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setStudentToDeenroll(std)}
+                              className="px-2 py-1 text-stone-400 hover:text-red-600 rounded cursor-pointer"
+                              title="De-enroll student from class"
+                            >
+                              <UserMinus className="w-3.5 h-3.5 inline" />
+                            </button>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })

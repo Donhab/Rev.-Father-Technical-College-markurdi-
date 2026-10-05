@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Student, SchoolClass } from '../types/school';
+import { isStudentInClass } from '../utils/studentUtils';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { UserPlus, Search, Trash2, Edit2, Eye, EyeOff, Copy, Check, Key } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -40,6 +41,12 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
   const [password, setPassword] = useState('0000');
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!classId && classes.length > 0) {
+      setClassId(classes[0].id);
+    }
+  }, [classes, classId]);
+
   const togglePasswordVisibility = (id: string) => {
     setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -56,7 +63,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
       s.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.admissionNo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClass = selectedClass === 'All' || s.className === selectedClass || s.classId === selectedClass;
+    const matchesClass =
+      selectedClass === 'All' || isStudentInClass(s, selectedClass);
     return matchesSearch && matchesClass;
   });
 
@@ -65,7 +73,12 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
     setFirstName('');
     setLastName('');
     setGender('Male');
-    setClassId(classes[0]?.id || '');
+    // Pre-select currently filtered class if one is chosen
+    const activeClassId =
+      selectedClass !== 'All'
+        ? classes.find((c) => c.id === selectedClass || c.name === selectedClass)?.id || classes[0]?.id || ''
+        : classes[0]?.id || '';
+    setClassId(activeClassId);
     setGuardianName('');
     setGuardianPhone('');
     setPassword('0000');
@@ -184,12 +197,15 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({
             onChange={(e) => setSelectedClass(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
           >
-            <option value="All">All Classes ({classes.length})</option>
-            {classes.map((cls) => (
-              <option key={cls.id} value={cls.name}>
-                {cls.name} ({cls.arm})
-              </option>
-            ))}
+            <option value="All">All Classes ({students.length} students)</option>
+            {classes.map((cls) => {
+              const count = students.filter((s) => isStudentInClass(s, cls)).length;
+              return (
+                <option key={cls.id} value={cls.id}>
+                  {cls.name} ({cls.arm}) — {count} {count === 1 ? 'student' : 'students'}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
