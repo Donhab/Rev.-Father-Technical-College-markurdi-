@@ -12,6 +12,7 @@ import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { AdminPanel } from './components/AdminPanel';
 import { StaffDashboard } from './components/StaffDashboard';
 import { StudentDashboard } from './components/StudentDashboard';
+import { StudentResultChecker } from './components/StudentResultChecker';
 import { VisitorPortal } from './components/VisitorPortal';
 import { HomePage } from './components/HomePage';
 import { SchoolBadge } from './components/SchoolBadge';
@@ -168,10 +169,10 @@ function SchoolAppContent() {
             onNavigateToCheckResult={() => {
               if (userProfile?.role === 'student') {
                 setActiveTab('student_dashboard');
-              } else if (userProfile) {
+              } else if (userProfile?.role === 'admin' || userProfile?.role === 'super_admin') {
                 setActiveTab('results');
               } else {
-                goToLoginPage();
+                setActiveTab('check_result');
               }
             }}
             onPostNews={postNews}
@@ -243,7 +244,7 @@ function SchoolAppContent() {
               if (userProfile?.role === 'student') {
                 setActiveTab('student_dashboard');
               } else {
-                goToLoginPage();
+                setActiveTab('check_result');
               }
             }}
             onOpenAuth={goToLoginPage}
@@ -426,8 +427,21 @@ function SchoolAppContent() {
             scratchCards={scratchCards}
             results={results}
             students={students}
+            classes={classes}
             onGenerateBatch={generateBatchScratchCards}
             onSaveResult={async () => ({} as any)}
+          />
+        )}
+
+        {/* 5. Direct Public Student Result Checker (No Login Required) */}
+        {activeTab === 'check_result' && (
+          <StudentResultChecker
+            students={students}
+            results={results}
+            scratchCards={scratchCards}
+            classes={classes}
+            onActivateScratchCard={activateScratchCardForStudent}
+            onBackToHome={() => setActiveTab('home')}
           />
         )}
 

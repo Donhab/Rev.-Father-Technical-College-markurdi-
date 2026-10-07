@@ -11,7 +11,8 @@ import {
   Home,
   GraduationCap,
   Image as ImageIcon,
-  Layers
+  Layers,
+  Award
 } from 'lucide-react';
 import { SchoolBadge, SchoolBadgeModal } from './SchoolBadge';
 import { HeroSliderManagerModal } from './ModernHeroSlider';
@@ -46,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (!userProfile) {
       return [
         { id: 'home', label: 'Home Page', icon: Home },
+        { id: 'check_result', label: 'Check Results', icon: Award },
         { id: 'public_portal', label: 'School News', icon: Newspaper },
         { id: 'login', label: 'Portal Login', icon: KeyRound }
       ];
@@ -70,6 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         { id: 'public_portal', label: 'School News', icon: Newspaper },
         { id: 'admin_panel', label: 'Admin Operations' },
         { id: 'post_news', label: 'Post School News' },
+        { id: 'results', label: 'Broadsheet' },
         { id: 'classes', label: 'Classes' },
         { id: 'subjects', label: 'Subjects' },
         { id: 'staff', label: 'Teachers' },
@@ -80,10 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
     if (currentRole === 'staff') {
       return [
-        { id: 'home', label: 'Home Page', icon: Home },
-        { id: 'public_portal', label: 'School News', icon: Newspaper },
-        { id: 'staff_dashboard', label: 'Teacher Gradebook' },
-        { id: 'results', label: 'Class Broadsheet' }
+        { id: 'staff_dashboard', label: "Teacher's Portal", icon: GraduationCap }
       ];
     }
     // student role
@@ -120,7 +120,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand & Crest */}
         <div
           className="flex items-center gap-3 cursor-pointer"
-          onClick={() => setActiveTab('home')}
+          onClick={() => {
+            if (currentRole === 'staff') {
+              setActiveTab('staff_dashboard');
+            } else if (currentRole === 'student') {
+              setActiveTab('student_dashboard');
+            } else {
+              setActiveTab('home');
+            }
+          }}
         >
           <SchoolBadge size="md" />
           <div>

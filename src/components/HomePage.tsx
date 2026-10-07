@@ -472,13 +472,23 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onOpenLogin}
-            className="w-full py-2.5 bg-[#0b4d2c] hover:bg-[#083a21] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
-          >
-            <span>Staff & Student Login</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="space-y-2 pt-2">
+            <button
+              onClick={onNavigateToCheckResult}
+              className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Check Results (Scratch Card)</span>
+            </button>
+
+            <button
+              onClick={onOpenLogin}
+              className="w-full py-2.5 bg-[#0b4d2c] hover:bg-[#083a21] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>Staff & Student Login</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </section>
 

@@ -15,7 +15,8 @@ import {
   RotateCcw,
   CheckCircle2,
   X,
-  ShieldCheck
+  ShieldCheck,
+  Award
 } from 'lucide-react';
 import {
   collection,
@@ -779,6 +780,7 @@ interface ModernHeroSliderProps {
 
 export const ModernHeroSlider: React.FC<ModernHeroSliderProps> = ({
   onOpenLogin,
+  onNavigateToCheckResult,
   onExplorePrograms
 }) => {
   const { userProfile } = useAuth();
@@ -989,17 +991,27 @@ export const ModernHeroSlider: React.FC<ModernHeroSliderProps> = ({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onOpenLogin}
-            className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 shrink-0 group border border-amber-300"
+            className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 shrink-0 group border border-amber-300 cursor-pointer"
           >
             <LogIn className="w-4 h-4 text-stone-950 group-hover:scale-110 transition-transform" />
             <span>Login to Portal</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
 
+          {onNavigateToCheckResult && (
+            <button
+              onClick={onNavigateToCheckResult}
+              className="px-5 py-3 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 shrink-0 border border-emerald-500/50 cursor-pointer"
+            >
+              <Award className="w-4 h-4 text-amber-300" />
+              <span>Check Results (Scratch Card)</span>
+            </button>
+          )}
+
           {onExplorePrograms && (
             <button
               onClick={onExplorePrograms}
-              className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm rounded-xl border border-white/20 backdrop-blur-xs transition inline-flex items-center gap-1.5"
+              className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm rounded-xl border border-white/20 backdrop-blur-xs transition inline-flex items-center gap-1.5 cursor-pointer"
             >
               <BookOpen className="w-4 h-4 text-emerald-300" />
               <span>9 Vocational Trades</span>
