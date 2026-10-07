@@ -28,7 +28,8 @@ import {
   ShieldCheck,
   UserX,
   FileSpreadsheet,
-  Info
+  Info,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -104,7 +105,17 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
       c.formTeacherId === teacher?.id ||
       (teacher?.fullName && c.formTeacherName?.toLowerCase() === teacher.fullName.toLowerCase())
   );
-  const isFormMaster = formTeacherClasses.length > 0 || Boolean(teacher?.isFormTeacher);
+  const isFormMaster =
+    formTeacherClasses.length > 0 ||
+    Boolean(teacher?.isFormTeacher) ||
+    teacher?.role === 'Form Master';
+
+  // Strict Access Guard: If teacher is not a Form Master, block access to form teacher dashboard
+  useEffect(() => {
+    if (!isFormMaster && activeDashboard === 'form_teacher') {
+      setActiveDashboard('teacher');
+    }
+  }, [isFormMaster, activeDashboard]);
 
   // Determine classes taught by this teacher
   const classesHeTeaches = classes.filter(
@@ -515,8 +526,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
           </div>
           <div className="p-3 bg-white rounded-xl border border-stone-200/90 shadow-2xs">
             <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Form Master Class</span>
-            <span className="font-bold text-emerald-800 block mt-0.5">
-              {formTeacherClasses.length > 0 ? formTeacherClasses.map((c) => c.name).join(', ') : 'Not Assigned'}
+            <span className={`block mt-0.5 font-bold ${isFormMaster ? 'text-emerald-800' : 'text-stone-500'}`}>
+              {formTeacherClasses.length > 0 ? formTeacherClasses.map((c) => c.name).join(', ') : 'Not Assigned (Subject Teacher)'}
             </span>
           </div>
         </div>
@@ -592,43 +603,68 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         {/* Button 2: Form Teacher Dashboard */}
         <button
           type="button"
-          onClick={() => setActiveDashboard('form_teacher')}
-          className={`p-5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group shadow-xs ${
-            activeDashboard === 'form_teacher'
-              ? 'bg-[#0b4d2c] text-white border-[#083a21] ring-2 ring-emerald-500 shadow-md'
-              : 'bg-white hover:bg-stone-50 text-stone-800 border-stone-200'
+          onClick={() => {
+            if (!isFormMaster) return;
+            setActiveDashboard('form_teacher');
+          }}
+          disabled={!isFormMaster}
+          className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden group shadow-xs ${
+            !isFormMaster
+              ? 'bg-stone-50 border-stone-200 cursor-not-allowed opacity-80 select-none'
+              : activeDashboard === 'form_teacher'
+              ? 'bg-[#0b4d2c] text-white border-[#083a21] ring-2 ring-emerald-500 shadow-md cursor-pointer'
+              : 'bg-white hover:bg-stone-50 text-stone-800 border-stone-200 cursor-pointer'
           }`}
+          title={
+            !isFormMaster
+              ? 'Access Restricted: You are not assigned as a Form Master for any class.'
+              : 'Form Teacher Dashboard'
+          }
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3.5">
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition ${
-                  activeDashboard === 'form_teacher'
+                  !isFormMaster
+                    ? 'bg-stone-200/70 text-stone-400'
+                    : activeDashboard === 'form_teacher'
                     ? 'bg-white/20 text-amber-300'
                     : 'bg-emerald-50 text-[#0b4d2c] group-hover:bg-emerald-100'
                 }`}
               >
-                <Users className="w-6 h-6" />
+                {!isFormMaster ? <Lock className="w-6 h-6" /> : <Users className="w-6 h-6" />}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
-                      activeDashboard === 'form_teacher'
+                    className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1 ${
+                      !isFormMaster
+                        ? 'bg-stone-200 text-stone-600'
+                        : activeDashboard === 'form_teacher'
                         ? 'bg-amber-400 text-stone-950'
                         : 'bg-amber-100 text-amber-900'
                     }`}
                   >
-                    Form Master
+                    {!isFormMaster && <Lock className="w-3 h-3 text-stone-500" />}
+                    {!isFormMaster ? 'Restricted' : 'Form Master'}
                   </span>
-                  {activeDashboard === 'form_teacher' && (
+                  {isFormMaster && activeDashboard === 'form_teacher' && (
                     <span className="text-[10px] font-bold text-emerald-200 flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                       Active View
                     </span>
                   )}
+                  {!isFormMaster && (
+                    <span className="text-[10px] font-semibold text-stone-400">
+                      Form Masters Only
+                    </span>
+                  )}
                 </div>
-                <h3 className="text-base sm:text-lg font-black tracking-tight mt-1">
+                <h3
+                  className={`text-base sm:text-lg font-black tracking-tight mt-1 ${
+                    !isFormMaster ? 'text-stone-500' : ''
+                  }`}
+                >
                   Form Teacher Dashboard
                 </h3>
               </div>
@@ -636,12 +672,16 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
 
             <span
               className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${
-                activeDashboard === 'form_teacher'
+                !isFormMaster
+                  ? 'bg-stone-200 text-stone-500 border border-stone-300'
+                  : activeDashboard === 'form_teacher'
                   ? 'bg-emerald-800 text-emerald-100 border border-emerald-700'
                   : 'bg-stone-100 text-stone-700 border border-stone-200'
               }`}
             >
-              {formTeacherClasses.length > 0
+              {!isFormMaster
+                ? 'Locked'
+                : formTeacherClasses.length > 0
                 ? formTeacherClasses.map((c) => c.name).join(', ')
                 : 'Not Assigned'}
             </span>
@@ -649,10 +689,16 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
 
           <p
             className={`text-xs mt-3 leading-relaxed ${
-              activeDashboard === 'form_teacher' ? 'text-emerald-100' : 'text-stone-500'
+              !isFormMaster
+                ? 'text-stone-400'
+                : activeDashboard === 'form_teacher'
+                ? 'text-emerald-100'
+                : 'text-stone-500'
             }`}
           >
-            Manage your designated form class student roster, view and copy student portal login credentials (Admission Number &amp; Password), and review the form class academic broadsheet.
+            {!isFormMaster
+              ? 'Access Restricted: You are not assigned as a Form Master. Only designated Form Masters can access this dashboard to manage form class rosters, view student portal credentials, and monitor class broadsheets.'
+              : 'Manage your designated form class student roster, view and copy student portal login credentials (Admission Number & Password), and review the form class academic broadsheet.'}
           </p>
         </button>
       </div>
@@ -1309,31 +1355,39 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               </div>
             </>
           ) : (
-            /* Unassigned Form Teacher Notice */
-            <div className="bg-white rounded-2xl border border-stone-200 p-8 shadow-2xs text-center max-w-lg mx-auto space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 mx-auto">
-                <Info className="w-8 h-8" />
+            /* Strict Access Denied Screen */
+            <div className="bg-white rounded-3xl border border-red-200 p-8 sm:p-10 shadow-sm text-center max-w-lg mx-auto space-y-5">
+              <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 mx-auto shadow-inner">
+                <Lock className="w-8 h-8" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-stone-900">
-                  Form Master Assignment Required
+              <div className="space-y-1.5">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800">
+                  Access Restricted
+                </span>
+                <h3 className="text-xl font-bold text-stone-900">
+                  Access Denied: Form Teacher Dashboard
                 </h3>
-                <p className="text-xs text-stone-600 mt-1 leading-relaxed">
-                  You are currently logged in as a <strong>Subject Teacher</strong>. You have not yet been assigned as the official Form Master for a specific class by the School Administrator.
+                <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
+                  You are currently logged in as a <strong>Subject Teacher</strong>. Since you are not a designated Form Teacher, you are not authorized to access the Form Teacher Dashboard.
                 </p>
               </div>
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs text-stone-700 text-left space-y-1.5">
-                <div className="font-semibold text-stone-900">How to get a Form Class assigned:</div>
-                <div>1. Contact the School Principal or Administrator in the Admin Operations panel.</div>
-                <div>2. Ask them to edit your staff profile and designate you as the Form Master for your class (e.g., CCS 1).</div>
-                <div>3. Once assigned, your Form Teacher Dashboard will automatically unlock here.</div>
+
+              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs text-stone-700 text-left space-y-2">
+                <div className="font-semibold text-stone-900 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#0b4d2c]" />
+                  <span>Administrative Role Restriction</span>
+                </div>
+                <p className="text-[11px] text-stone-500 leading-relaxed">
+                  Only teachers designated as official Form Masters by the School Administrator in the Admin Operations panel can view student portal passwords and class broadsheet directories.
+                </p>
               </div>
+
               <button
                 type="button"
                 onClick={() => setActiveDashboard('teacher')}
-                className="px-4 py-2 bg-[#0b4d2c] text-white text-xs font-bold rounded-lg shadow-sm hover:bg-[#083a21] transition cursor-pointer"
+                className="px-6 py-2.5 bg-[#0b4d2c] hover:bg-[#083a21] text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
               >
-                Go to Teacher&apos;s Dashboard
+                Return to Teacher&apos;s Dashboard
               </button>
             </div>
           )}
