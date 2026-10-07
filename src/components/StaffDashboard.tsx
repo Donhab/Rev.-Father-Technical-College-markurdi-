@@ -9,13 +9,10 @@ import {
   SubjectScore
 } from '../types/school';
 import { isStudentInClass, isStudentOfferingSubject } from '../utils/studentUtils';
-import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { SchoolBadge } from './SchoolBadge';
 import {
   GraduationCap,
   UserCheck,
-  UserPlus,
-  UserMinus,
   Edit3,
   Save,
   CheckCircle,
@@ -30,7 +27,9 @@ import {
   Key,
   CheckSquare,
   Square,
-  Users
+  Users,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -42,9 +41,9 @@ interface StaffDashboardProps {
   subjects: Subject[];
   assignments: TeachingAssignment[];
   results: ExamResult[];
-  onEnrollStudent: (data: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Student>;
+  onEnrollStudent?: (data: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Student>;
   onUpdateStudent?: (studentId: string, updates: Partial<Student>) => Promise<void>;
-  onDeenrollStudent: (studentId: string) => Promise<void>;
+  onDeenrollStudent?: (studentId: string) => Promise<void>;
   onToggleStudentSubjectEnrollment?: (
     studentId: string,
     subjectId: string,
@@ -142,16 +141,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     }
   }, [subjects, teacherAssignments, selectedSubjectId]);
 
-  // Enrollment form state
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [studentToDeenroll, setStudentToDeenroll] = useState<Student | null>(null);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [gender, setGender] = useState<'Male' | 'Female'>('Male');
-  const [guardianName, setGuardianName] = useState('');
-  const [guardianPhone, setGuardianPhone] = useState('');
-  const [studentPassword, setStudentPassword] = useState('0000');
-  const [enrolling, setEnrolling] = useState(false);
   const [enrollingAll, setEnrollingAll] = useState(false);
   const [savingAllScores, setSavingAllScores] = useState(false);
 
@@ -372,48 +361,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     }
   };
 
-  const handleEnrollSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEnrolling(true);
-    try {
-      const count = students.length + 1;
-      const admissionNo = `USTC/2026/${count.toString().padStart(3, '0')}`;
-
-      const newStudent = await onEnrollStudent({
-        admissionNo,
-        password: studentPassword.trim() || '0000',
-        firstName,
-        lastName,
-        gender,
-        classId: selectedClass.id,
-        className: selectedClass.name,
-        term: 'First Term',
-        session: '2025/2026',
-        guardianName,
-        guardianPhone,
-        status: 'Active',
-        enrolledByTeacherId: teacher?.id,
-        enrolledSubjectIds: selectedSubject?.id ? [selectedSubject.id] : []
-      });
-
-      if (newStudent?.id && selectedSubject?.id) {
-        setSubjectEnrollments((prev) => ({ ...prev, [newStudent.id]: true }));
-      }
-
-      confetti({ particleCount: 40 });
-      setFirstName('');
-      setLastName('');
-      setGuardianName('');
-      setGuardianPhone('');
-      setStudentPassword('0000');
-      setShowEnrollModal(false);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setEnrolling(false);
-    }
-  };
-
   const handleUpdateStudentPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPasswordStudent || !onUpdateStudent) return;
@@ -473,13 +420,17 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={() => setShowEnrollModal(true)}
-          className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 self-start md:self-auto shrink-0"
-        >
-          <UserPlus className="w-4 h-4 text-stone-950" />
-          <span>Enroll Student to {selectedClass?.name}</span>
-        </button>
+        <div className="flex items-center gap-2.5 bg-emerald-950/70 border border-emerald-700/80 px-3.5 py-2.5 rounded-xl text-xs text-emerald-100 self-start md:self-auto shadow-inner">
+          <ShieldCheck className="w-5 h-5 text-amber-300 shrink-0" />
+          <div>
+            <div className="font-bold text-white text-xs">
+              Roster Enrolled by Admin
+            </div>
+            <div className="text-[11px] text-emerald-200">
+              {classStudents.length} {classStudents.length === 1 ? 'student' : 'students'} in {selectedClass?.name}. Select who offers your subject below.
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Class & Subject Selector Controls */}
@@ -766,19 +717,15 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAllPasswords((prev) => !prev)}
-                className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#0b4d2c] text-xs font-semibold rounded-md border border-emerald-200 flex items-center gap-1"
+                className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#0b4d2c] text-xs font-semibold rounded-md border border-emerald-200 flex items-center gap-1 cursor-pointer"
               >
                 {showAllPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 <span>{showAllPasswords ? 'Hide Passwords' : 'Show Student Passwords'}</span>
               </button>
             )}
-            <button
-              onClick={() => setShowEnrollModal(true)}
-              className="px-3 py-1 bg-[#0b4d2c] hover:bg-[#083a21] text-white text-xs font-semibold rounded-md shadow-xs flex items-center gap-1"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Register New Student to {selectedClass?.name}</span>
-            </button>
+            <span className="px-2.5 py-1 rounded bg-stone-100 text-stone-600 text-xs font-medium border border-stone-200">
+              Admin Roster
+            </span>
           </div>
         </div>
 
@@ -819,7 +766,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               {classStudents.length === 0 ? (
                 <tr>
                   <td colSpan={isFormTeacherOfCurrentClass ? 11 : 10} className="py-8 text-center text-stone-400">
-                    No students registered in {selectedClass?.name} yet. Click &quot;Register New Student to {selectedClass?.name}&quot; above to add learners.
+                    No students registered in {selectedClass?.name} yet. New students are registered into classes by the School Administrator.
                   </td>
                 </tr>
               ) : (
@@ -977,12 +924,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             </span>
                           </td>
 
-                          {/* Actions: Save Score & De-enroll */}
-                          <td className="py-3 px-3 text-right space-x-2">
+                          {/* Actions: Save Score */}
+                          <td className="py-3 px-3 text-right">
                             <button
                               onClick={() => handleSaveStudentScore(std)}
                               disabled={score.saving}
-                              className={`px-2.5 py-1 text-xs font-semibold rounded-md shadow-2xs transition ${
+                              className={`px-3 py-1 text-xs font-semibold rounded-md shadow-2xs transition ${
                                 score.saved
                                   ? 'bg-emerald-600 text-white'
                                   : 'bg-[#0b4d2c] hover:bg-[#083a21] text-white cursor-pointer'
@@ -990,40 +937,22 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             >
                               {score.saving ? 'Saving...' : score.saved ? 'Saved ✓' : 'Save Score'}
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setStudentToDeenroll(std)}
-                              className="px-2 py-1 text-stone-400 hover:text-red-600 rounded cursor-pointer"
-                              title="De-enroll student from class"
-                            >
-                              <UserMinus className="w-3.5 h-3.5 inline" />
-                            </button>
                           </td>
                         </>
                       ) : (
                         <>
-                          <td colSpan={6} className="py-3 px-3 text-stone-400 italic">
+                          <td colSpan={7} className="py-3 px-3 text-stone-400 italic">
                             <div className="flex items-center gap-2">
-                              <span>Not enrolled in {selectedSubject?.code} —</span>
+                              <span>Not offering {selectedSubject?.code} in this class —</span>
                               <button
                                 type="button"
                                 onClick={() => handleToggleStudentEnrollment(std)}
                                 className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#0b4d2c] font-semibold rounded border border-emerald-200 text-[11px] inline-flex items-center gap-1 cursor-pointer"
                               >
                                 <CheckSquare className="w-3.5 h-3.5" />
-                                <span>Tick to Enroll in Subject</span>
+                                <span>Tick to Enroll in {selectedSubject?.code}</span>
                               </button>
                             </div>
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => setStudentToDeenroll(std)}
-                              className="px-2 py-1 text-stone-400 hover:text-red-600 rounded cursor-pointer"
-                              title="De-enroll student from class"
-                            >
-                              <UserMinus className="w-3.5 h-3.5 inline" />
-                            </button>
                           </td>
                         </>
                       )}
@@ -1036,107 +965,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         </div>
       </div>
 
-      {/* Modal: Enroll Student by Teacher */}
-      {showEnrollModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs text-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
-              <h3 className="font-bold text-sm text-stone-900 flex items-center gap-1.5">
-                <UserPlus className="w-4 h-4 text-emerald-700" />
-                Enroll Student into {selectedClass?.name}
-              </h3>
-              <button onClick={() => setShowEnrollModal(false)} className="text-stone-400 hover:text-stone-600">✕</button>
-            </div>
 
-            <form onSubmit={handleEnrollSubmit} className="space-y-3 mt-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">First Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Fatima"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Last / Surname</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Bello"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(e: any) => setGender(e.target.value)}
-                  className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Guardian Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Alh. Bello"
-                    value={guardianName}
-                    onChange={(e) => setGuardianName(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-stone-700 mb-1">Guardian Phone</label>
-                  <input
-                    type="text"
-                    placeholder="+234 803 000 0000"
-                    value={guardianPhone}
-                    onChange={(e) => setGuardianPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">
-                  Student Portal Login Password
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Default: 0000"
-                  value={studentPassword}
-                  onChange={(e) => setStudentPassword(e.target.value)}
-                  className="w-full px-3 py-2 font-mono border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#0b4d2c] focus:outline-none bg-emerald-50/40"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setShowEnrollModal(false)} className="px-3 py-1.5 text-stone-600">Cancel</button>
-                <button
-                  type="submit"
-                  disabled={enrolling}
-                  className="px-4 py-1.5 bg-[#0b4d2c] text-white font-bold rounded-lg shadow-sm"
-                >
-                  {enrolling ? 'Enrolling...' : 'Enroll Student'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Modal: Form Teacher Set/Update Student Password */}
       {editingPasswordStudent && (
@@ -1197,24 +1026,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
           </div>
         </div>
       )}
-
-      <ConfirmDeleteModal
-        isOpen={Boolean(studentToDeenroll)}
-        title="De-enroll & Remove Student"
-        message={
-          studentToDeenroll
-            ? `Are you sure you want to de-enroll and remove "${studentToDeenroll.firstName} ${studentToDeenroll.lastName}" (${studentToDeenroll.admissionNo}) from ${selectedClass?.name || 'this class'}?`
-            : ''
-        }
-        confirmLabel="Yes, De-enroll Student"
-        onConfirm={async () => {
-          if (studentToDeenroll) {
-            await onDeenrollStudent(studentToDeenroll.id);
-            setStudentToDeenroll(null);
-          }
-        }}
-        onCancel={() => setStudentToDeenroll(null)}
-      />
     </div>
   );
 };

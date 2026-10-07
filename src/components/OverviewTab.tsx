@@ -247,23 +247,42 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
           </div>
 
-          {/* Action 2: Register Student */}
-          <div
-            onClick={onOpenRegisterStudent}
-            className="bg-white rounded-xl border border-stone-200 p-4 shadow-2xs hover:shadow-md hover:border-emerald-300 transition cursor-pointer flex items-center gap-3.5 group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
-              <UserPlus className="w-5 h-5" />
+          {/* Action 2: Enroll Student (Admin) or Teacher Gradebook (Staff) */}
+          {userProfile?.role === 'staff' ? (
+            <div
+              onClick={() => onNavigate('staff_dashboard')}
+              className="bg-white rounded-xl border border-stone-200 p-4 shadow-2xs hover:shadow-md hover:border-emerald-300 transition cursor-pointer flex items-center gap-3.5 group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-stone-800 group-hover:text-emerald-700">
+                  Teacher Gradebook
+                </h4>
+                <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                  Select subject &amp; enter marks
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h4 className="text-xs font-bold text-stone-800 group-hover:text-emerald-700">
-                Register Student
-              </h4>
-              <p className="text-[11px] text-stone-500 truncate mt-0.5">
-                Admit into CCS 1 or Garment
-              </p>
+          ) : (
+            <div
+              onClick={onOpenRegisterStudent}
+              className="bg-white rounded-xl border border-stone-200 p-4 shadow-2xs hover:shadow-md hover:border-emerald-300 transition cursor-pointer flex items-center gap-3.5 group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-stone-800 group-hover:text-emerald-700">
+                  Enroll Student (Admin)
+                </h4>
+                <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                  Admit into class roster
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Action 3: Generate Scratch Cards (Principal Super Admin Only) */}
           {isPrincipalSuperAdmin && (
